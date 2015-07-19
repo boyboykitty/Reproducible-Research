@@ -57,109 +57,131 @@ steps_by_day <- aggregate(steps ~ date, data, sum)
 hist(steps_by_day$steps, main = paste("Total Steps Each Day"), col="blue", xlab="Number of Steps")
 ```
 
-![plot of chunk unnamed-chunk-2](./Reproducible_Research_Project_1_Steps_files/figure-html/unnamed-chunk-2.png) 
+![plot of chunk unnamed-chunk-2](https://github.com/boyboykitty/Reproducible-Research/blob/master/PeerAssessment1/figure/PA1.png?raw=true) 
 
-```r
-rmean <- mean(steps_by_day$steps)
-rmedian <- median(steps_by_day$steps)
-```
 
-The `mean` is 1.0766 &times; 10<sup>4</sup> and the `median` is 10765.
-
-## What is the average daily activity pattern?
-
-The table of total number of steps taken per day
+The mean and median of the total number of steps taken per day
 
 ```{r}
 
-agtable<-aggregate(mydata$steps, by=list(mydata$date), sum, na.rm = TRUE)
-names(agtable) <- c("date", "steps")
+mean(agtable$steps)
+median(agtable$steps)
 
 ```
 
-The Histogram of the total number of steps taken each day 
+
+##3.What is the average daily activity pattern?
+
+Time series plot of the 5-minute interva
 
 ```{r}
 
-hist(agtable$steps,col="blue",main = "Total steps by day",xlab = "total steps",
-     breaks=seq(from=0, to=25000, by=2500))
+agtable_mean<-aggregate(steps~time,mydata,mean,na.rm=TRUE)
+plot(agtable_mean,type="l",col="red" ,main="Average daily activity pattern"
+     ,xlab = " 5-Minute interval ",ylab="Mean steps")
 
 ```
 
-![plot of chunk unnamed-chunk-3](./Reproducible-Research/PeerAssessment1/figure/PA1.png) 
+![plot of chunk unnamed-chunk-2](https://github.com/boyboykitty/Reproducible-Research/blob/master/PeerAssessment1/figure/PA2.png?raw=true) 
 
 
+Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
 
-The 5-minute interval, on average across all the days in the data set, containing the maximum number of steps is 835.
+```{r}
+agtable_mean$time <- format(agtable_mean$time, format = "%H:%M:%S")
+max_steps_time <- which.max(agtable_mean$steps)
+print(agtable_mean[max_steps_time,])
 
-## Impute missing values. Compare imputed to non-imputed data.
-Missing data needed to be imputed. Only a simple imputation approach was required for this assignment. 
-Missing values were imputed by inserting the average for each interval. Thus, if interval 10 was missing on 10-02-2012, the average for that interval for all days (0.1320755), replaced the NA. 
-
-```r
-incomplete <- sum(!complete.cases(data))
-imputed_data <- transform(data, steps = ifelse(is.na(data$steps), steps_by_interval$steps[match(data$interval, steps_by_interval$interval)], data$steps))
 ```
 
-Zeroes were imputed for 10-01-2012 because it was the first day and would have been over 9,000 steps higher than the following day, which had only 126 steps. NAs then were assumed to be zeros to fit the rising trend of the data. 
+##4.Imputing missing values
 
-```r
-imputed_data[as.character(imputed_data$date) == "2012-10-01", 1] <- 0
+Calculate and report the total number of missing values
+
+```{r}
+
+sum(is.na(mydata$steps))
+
 ```
 
-Recount total steps by day and create Histogram. 
+Create a new dataset with the missing data replaced by mean and filled in.
 
-```r
-steps_by_day_i <- aggregate(steps ~ date, imputed_data, sum)
-hist(steps_by_day_i$steps, main = paste("Total Steps Each Day"), col="blue", xlab="Number of Steps")
+```{r}
 
-#Create Histogram to show difference. 
-hist(steps_by_day$steps, main = paste("Total Steps Each Day"), col="red", xlab="Number of Steps", add=T)
-legend("topright", c("Imputed", "Non-imputed"), col=c("blue", "red"), lwd=10)
+# Find the NA positions
+na_pos <- which(is.na(mydata$steps))
+
+# Create a vector of means
+mean_vec <- rep(mean(mydata$steps, na.rm=TRUE), times=length(na_pos))
+
+# Replace the NAs by the means
+mydata$newsteps<-mydata$steps
+mydata[na_pos, "newsteps"] <- mean_vec
+
+# Clear the workspace
+rm(mean_vec, na_pos)
+
 ```
 
-![plot of chunk unnamed-chunk-6](./Reproducible_Research_Project_1_Steps_files/figure-html/unnamed-chunk-6.png) 
+Make a histogram of the total number of steps with missing data
 
-Calculate new mean and median for imputed data. 
+```{r, echo=FALSE}
 
-```r
-rmean.i <- mean(steps_by_day_i$steps)
-rmedian.i <- median(steps_by_day_i$steps)
+agtable2<-aggregate(mydata$newsteps, by=list(mydata$date), sum, na.rm = TRUE)
+names(agtable2) <- c("date", "newsteps")
+hist(agtable2$newsteps,col="red",main = "Total steps by day (NA replaced)"
+     ,xlab = "Total steps",breaks=seq(from=0, to=25000, by=2500))
+
 ```
 
-Calculate difference between imputed and non-imputed data.
+![plot of chunk unnamed-chunk-3](https://github.com/boyboykitty/Reproducible-Research/blob/master/PeerAssessment1/figure/PA3.png?raw=true) 
 
-```r
-mean_diff <- rmean.i - rmean
-med_diff <- rmedian.i - rmedian
+The mean and median are computed like
+
+```{r}
+
+mean(agtable2$newsteps)
+median(agtable2$newsteps)
+
 ```
 
-Calculate total difference.
+These values differ greatly from the estimates from the first part of the assignment. The impact of imputing the missing values is to have more data, hence to obtain a bigger mean and median value.
 
-```r
-total_diff <- sum(steps_by_day_i$steps) - sum(steps_by_day$steps)
+##5.Are there differences in activity patterns between weekdays and weekends?
+
+Create a new factor variable in the dataset with two levels – “weekday” and “weekend”
+
+```{r}
+
+# show the date as English date 
+
+Sys.setlocale(,"C")  
+
+# Create a new weekday dataframe 
+mydata$weekday<-weekdays(mydata$date)
+mydata$weekday[mydata$weekday %in% c("Saturday","Sunday")]<- "weekend"
+mydata$weekday[mydata$weekday != "weekend"]<- "weekday"
+
+# Compute the average number of steps taken, averaged across all daytype variable
+mean_data <- aggregate(mydata$steps, 
+                       by=list(mydata$weekday,mydata$interval), mean,na.rm=TRUE)
+names(mean_data) <- c("weekday", "interval", "mean")
+
 ```
-* The imputed data mean is 1.059 &times; 10<sup>4</sup>
-* The imputed data median is 1.0766 &times; 10<sup>4</sup>
-* The difference between the non-imputed mean and imputed mean is -176.4949
-* The difference between the non-imputed mean and imputed mean is 1.1887
-* The difference between total number of steps between imputed and non-imputed data is 7.5363 &times; 10<sup>4</sup>. Thus, there were 7.5363 &times; 10<sup>4</sup> more steps in the imputed data.
 
+The time series plot take the following form:
 
-## Are there differences in activity patterns between weekdays and weekends?
-Created a plot to compare and contrast number of steps between the week and weekend. There is a higher peak earlier on weekdays, and more overall activity on weekends.  
+```{r}
 
-```r
-weekdays <- c("Monday", "Tuesday", "Wednesday", "Thursday", 
-              "Friday")
-imputed_data$dow = as.factor(ifelse(is.element(weekdays(as.Date(imputed_data$date)),weekdays), "Weekday", "Weekend"))
-
-steps_by_interval_i <- aggregate(steps ~ interval + dow, imputed_data, mean)
-
+# Load the lattice graphical library
 library(lattice)
 
-xyplot(steps_by_interval_i$steps ~ steps_by_interval_i$interval|steps_by_interval_i$dow, main="Average Steps per Day by Interval",xlab="Interval", ylab="Steps",layout=c(1,2), type="l")
-```
+# Compute the time serie plot
+xyplot(mean ~ interval | weekday, mean_data, 
+       type="l", 
+       lwd=1, 
+       xlab="Interval", 
+       ylab="Number of steps", 
+       layout=c(1,2))
 
-![plot of chunk unnamed-chunk-10](./Reproducible_Research_Project_1_Steps_files/figure-html/unnamed-chunk-10.png) 
-
+![plot of chunk unnamed-chunk-4](https://github.com/boyboykitty/Reproducible-Research/blob/master/PeerAssessment1/figure/PA4.png?raw=true) 
