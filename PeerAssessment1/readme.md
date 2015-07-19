@@ -1,7 +1,10 @@
 # Reproducible-Research - PeerAsseeement
 title: "Reproducible Research-Assessment 1"
+
 author: "Lin weifu"
+
 date: "July , 2015"
+
 
 ###About
 This was the first project for the **Reproducible Research** course in Coursera's Data Science specialization track. The purpose of the project was to answer a series of questions using data collected from a [FitBit](http://en.wikipedia.org/wiki/Fitbit).
@@ -183,5 +186,7 @@ xyplot(mean ~ interval | weekday, mean_data,
        xlab="Interval", 
        ylab="Number of steps", 
        layout=c(1,2))
+
+```
 
 ![plot of chunk unnamed-chunk-4](https://github.com/boyboykitty/Reproducible-Research/blob/master/PeerAssessment1/figure/PA4.png?raw=true) 
